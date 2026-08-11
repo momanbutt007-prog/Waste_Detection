@@ -21,7 +21,7 @@ Waste_Detection/
 ├── README.md
 │
 ├── models/
-│   └── smart_waste_weights.weights.h5
+│   └── smart_waste_model.keras
 │
 ├── static/
 │   └── style.css
@@ -59,14 +59,10 @@ The app loads the **weights file**, not the incompatible full `.keras` file. Thi
 Copy your Colab weights:
 
 ```text
-/content/smart_waste_weights.weights.h5
+/content/smart_waste_model.keras
 ```
 
 into:
-
-```text
-models/smart_waste_weights.weights.h5
-```
 
 Do not rename it unless you also change `MODEL_PATH` in `app.py`.
 
@@ -165,7 +161,7 @@ If you want the model available after cloning, use Git LFS or a model-storage se
 Make sure this exists:
 
 ```text
-models/smart_waste_weights.weights.h5
+models\smart_waste_model.keras
 ```
 
 ### `Layer expected variables but received different variables`
