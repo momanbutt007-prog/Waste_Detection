@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Waste AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="background-glow glow-one"></div>
+    <div class="background-glow glow-two"></div>
+
+    <main class="container">
+        <header class="hero">
+            <div class="brand">
+                <div class="logo">♻</div>
+                <div>
+                    <span class="eyebrow">AI POWERED</span>
+                    <h1>Smart Waste<span> AI</span></h1>
+                </div>
+            </div>
+            <p class="subtitle">
+                Upload a waste image and let your Keras model classify it as
+                <strong>glass</strong>, <strong>metal</strong>, or <strong>paper</strong>.
+            </p>
+        </header>
+
+        <section class="app-card">
+            <div class="upload-panel">
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <label for="image" class="drop-zone" id="dropZone">
+                        <div class="upload-icon">↑</div>
+                        <h2>Drop your image here</h2>
+                        <p>or click to browse from your computer</p>
+                        <span class="formats">JPG · JPEG · PNG · WEBP · Max 10 MB</span>
+                        <input type="file" name="image" id="image"
+                               accept=".jpg,.jpeg,.png,.webp,image/*" hidden>
+                    </label>
+
+                    <div class="preview-wrap" id="previewWrap">
+                        <img id="preview" alt="Selected image preview">
+                        <div class="preview-info">
+                            <span id="fileName">Selected image</span>
+                            <button type="button" id="removeImage">Remove</button>
+                        </div>
+                    </div>
+
+                    <button class="predict-btn" type="submit" id="predictBtn">
+                        <span>Analyze Waste</span>
+                        <span class="arrow">→</span>
+                    </button>
+                </form>
+
+                {% if error %}
+                <div class="alert error">
+                    <span>!</span> {{ error }}
+                </div>
+                {% endif %}
+            </div>
+
+            {% if result %}
+            <div class="result-panel">
+                <div class="result-heading">
+                    <div>
+                        <span class="eyebrow">ANALYSIS COMPLETE</span>
+                        <h2>Detection Result</h2>
+                    </div>
+                    <div class="status-dot"></div>
+                </div>
+
+                <div class="result-image">
+                    <img src="{{ url_for('uploaded_file', filename=result.filename) }}"
+                         alt="Uploaded waste image">
+                </div>
+
+                <div class="prediction">
+                    <span class="label">PREDICTED CLASS</span>
+                    <div class="class-row">
+                        <h3>{{ result['class']|capitalize }}</h3>
+                        <span class="confidence">{{ result.confidence }}%</span>
+                    </div>
+                    <div class="confidence-bar">
+                        <div style="width: {{ result.confidence }}%"></div>
+                    </div>
+                </div>
+
+                <div class="result-grid">
+                    <div class="mini-card">
+                        <span>♻</span>
+                        <small>Recyclability</small>
+                        <strong>{{ result.recyclability }}</strong>
+                    </div>
+                    <div class="mini-card">
+                        <span>✓</span>
+                        <small>Model</small>
+                        <strong>EfficientNetB0</strong>
+                    </div>
+                </div>
+
+                <div class="scores">
+                    <div class="section-title">Class probabilities</div>
+
+                    {% for class_name, score in result.scores.items() %}
+                    <div class="score-row">
+                        <div class="score-label">
+                            <span>{{ class_name|capitalize }}</span>
+                            <span>{{ score }}%</span>
+                        </div>
+                        <div class="score-bar">
+                            <div style="width: {{ score }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="info-panel">
+                <div class="info-icon">✦</div>
+                <span class="eyebrow">HOW IT WORKS</span>
+                <h2>Turn waste into insight.</h2>
+                <p>
+                    Your trained EfficientNetB0 model analyzes the uploaded image
+                    and returns the most likely waste category with its confidence.
+                </p>
+
+                <div class="class-list">
+                    <div><span class="class-icon glass">◈</span><b>Glass</b><small>Recyclable</small></div>
+                    <div><span class="class-icon metal">◆</span><b>Metal</b><small>Recyclable</small></div>
+                    <div><span class="class-icon paper">▤</span><b>Paper</b><small>Recyclable</small></div>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+
+        <footer>
+            <span>Smart Waste Classification</span>
+            <span>•</span>
+            <span>Flask + TensorFlow + Keras</span>
+        </footer>
+    </main>
+
+    <script>
+        const input = document.getElementById("image");
+        const dropZone = document.getElementById("dropZone");
+        const previewWrap = document.getElementById("previewWrap");
+        const preview = document.getElementById("preview");
+        const fileName = document.getElementById("fileName");
+        const removeImage = document.getElementById("removeImage");
+        const form = document.getElementById("uploadForm");
+        const predictBtn = document.getElementById("predictBtn");
+
+        function showPreview(file) {
+            if (!file) return;
+
+            const validTypes = ["image/jpeg", "image/png", "image/webp"];
+            if (!validTypes.includes(file.type)) {
+                alert("Please choose JPG, JPEG, PNG, or WEBP.");
+                input.value = "";
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert("Image must be smaller than 10 MB.");
+                input.value = "";
+                return;
+            }
+
+            fileName.textContent = file.name;
+            preview.src = URL.createObjectURL(file);
+            previewWrap.classList.add("visible");
+            dropZone.classList.add("has-file");
+        }
+
+        input.addEventListener("change", () => showPreview(input.files[0]));
+
+        ["dragenter", "dragover"].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                dropZone.classList.add("dragging");
+            });
+        });
+
+        ["dragleave", "drop"].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                dropZone.classList.remove("dragging");
+            });
+        });
+
+        dropZone.addEventListener("drop", e => {
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                input.files = e.dataTransfer.files;
+                showPreview(file);
+            }
+        });
+
+        removeImage.addEventListener("click", () => {
+            input.value = "";
+            preview.src = "";
+            previewWrap.classList.remove("visible");
+            dropZone.classList.remove("has-file");
+        });
+
+        form.addEventListener("submit", () => {
+            if (!input.files.length) return;
+            predictBtn.disabled = true;
+            predictBtn.innerHTML = '<span class="spinner"></span><span>Analyzing...</span>';
+        });
+    </script>
+</body>
+</html>
