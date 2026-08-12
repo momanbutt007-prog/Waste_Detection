@@ -20,6 +20,7 @@ uploads/*
 # Model files
 models/*
 !models/.gitkeep
+!models/smart_waste_model.keras
 
 # IDE
 .vscode/
